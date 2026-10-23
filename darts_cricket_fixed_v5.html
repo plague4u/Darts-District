@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cricket Darts</title>
+<style>
+:root{--bg:#10151f;--panel:#1b2432;--panel2:#222e40;--text:#f4f7fb;--muted:#9eacc0;--accent:#44d7a8;--red:#ff6376;--blue:#68a7ff;--gold:#ffd166}
+*{box-sizing:border-box}html,body{margin:0;width:100%;min-height:100%;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text);overflow:hidden}body.hide-cursor,body.hide-cursor *{cursor:none!important}
+button,input,select{font:inherit}button{cursor:pointer;border:0;border-radius:12px;font-weight:750;transition:transform .08s,filter .15s}button:active{transform:scale(.98)}
+.app{height:100dvh;min-height:0;display:flex;flex-direction:column;gap:10px;padding:10px;max-width:1500px;margin:auto;overflow:hidden}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px}.dart-icon{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,var(--accent),#168d75);display:grid;place-items:center;font-size:24px;color:#081d19}
+h1{font-size:clamp(21px,3vw,30px);margin:0;letter-spacing:-.6px}.sub{font-size:12px;color:var(--muted);margin-top:3px}
+.header-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.round-badge{display:inline-flex;align-items:center;justify-content:center;background:#121a26;border:1px solid #3b4a60;color:var(--gold);padding:10px 13px;border-radius:10px;font-size:12px;font-weight:900;letter-spacing:.7px;white-space:nowrap}.secondary{background:#2c394c;color:var(--text);padding:10px 14px}.primary{background:var(--accent);color:#06251d;padding:11px 17px}.danger{background:#59303b;color:#ffdce1;padding:10px 14px}
+.setup{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--panel);padding:10px 12px;border:1px solid #2b3749;border-radius:14px}
+.setup label{color:var(--muted);font-size:12px;display:flex;align-items:center;gap:7px}.setup input,.setup select{width:135px;min-width:80px;background:#111925;color:var(--text);border:1px solid #3b4a60;border-radius:8px;padding:8px}
+/* Compact desktop setup controls: keep the settings on one row. */
+@media(min-width:851px){.setup{flex-wrap:nowrap;gap:7px;padding:7px 9px;white-space:nowrap}.setup label{gap:5px;font-size:11px}.setup input,.setup select{width:98px;min-width:0;padding:6px 7px;font-size:12px}.setup button{flex:0 0 auto;padding:8px 12px;font-size:13px}}
+.scoreline{display:grid;grid-template-columns:minmax(0,1fr);gap:7px;align-items:stretch;width:100%}
+.player{background:var(--panel);border:1px solid #2b3749;border-radius:16px;padding:13px 15px;min-width:0;width:100%;position:relative}
+.player.active{border:2px solid var(--accent);padding:12px 14px;box-shadow:0 0 0 2px #44d7a817}
+.player.right.active{border-color:var(--blue);box-shadow:0 0 0 2px #68a7ff17}
+.player-top{display:flex;justify-content:space-between;align-items:center;gap:8px}.player-name{font-size:clamp(15px,2vw,21px);font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.turn-tag{font-size:10px;color:#07281f;background:var(--accent);padding:4px 7px;border-radius:6px;font-weight:900}.right .turn-tag{background:var(--blue);color:#07182e}
+.points{font-size:clamp(29px,5vw,48px);font-weight:900;line-height:1.05;margin:10px 0 8px;font-variant-numeric:tabular-nums}.statline{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;gap:6px}
+.marks{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-top:12px;width:100%;max-width:100%;min-width:0}
+.mark-cell{height:clamp(58px,8vh,76px);border-radius:9px;background:#121a26;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;position:relative;border:1px solid #2c394c;min-width:0;overflow:hidden;padding:3px}
+.mark-cell .num{font-weight:850;font-size:clamp(14px,1.5vw,19px);z-index:1;white-space:nowrap;line-height:1;order:2;max-width:100%}.mark-cell .num.bull-label{font-size:clamp(9px,1.15vw,13px);letter-spacing:-.2px;transform:none;transform-origin:center}
+.mark-cell .slashes{position:static;inset:auto;display:flex;align-items:center;justify-content:center;gap:1px;color:var(--accent);font-size:clamp(22px,2.5vw,29px);font-weight:900;letter-spacing:-3px;padding:0;line-height:1;min-height:29px;order:1}
+.mark-cell .mark-double-x{display:inline-flex;align-items:center;justify-content:center;font-size:clamp(30px,3.2vw,38px);font-weight:900;line-height:.85;letter-spacing:0;min-width:32px;min-height:32px}
+.mark-cell.closed{background:#176b4b;border-color:#39d98a;box-shadow:inset 0 0 0 1px #39d98a55}.mark-cell.closed .slashes{color:#eafff3}.mark-cell .mark-closed-x{display:inline-flex;align-items:center;justify-content:center;width:clamp(25px,2.8vw,32px);height:clamp(25px,2.8vw,32px);border:2.5px solid currentColor;border-radius:50%;font-size:clamp(15px,1.8vw,21px);line-height:1;letter-spacing:0;box-sizing:border-box}.mark-cell.closed .slashes{min-height:32px}
+.center{display:none;grid-column:1 / -1;background:var(--panel2);border:1px solid #2b3749;border-radius:12px;flex-direction:row;align-items:center;justify-content:space-around;padding:7px;gap:6px;text-align:center}.center{display:none!important}.center .label{font-size:9px}.round{font-size:22px}.dartcount{font-size:10px}
+.center .label{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:1.5px;font-weight:800}.round{font-size:clamp(26px,4vw,40px);font-weight:900}.dartcount{color:var(--muted);font-size:12px}
+.turn-darts{display:flex;gap:5px}.dart-dot{width:9px;height:9px;border-radius:50%;background:#3b4a60}.dart-dot.used{background:var(--gold)}
+.game{display:grid;grid-template-columns:minmax(230px,.72fr) minmax(0,1.8fr);gap:12px;flex:1;min-height:0}
+.board{grid-column:2;grid-row:1;background:var(--panel);border:1px solid #2b3749;border-radius:16px;padding:10px;display:flex;flex-direction:column;min-height:0}
+.board-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}.board-head h2{font-size:14px;margin:0}.bot-last-throw{margin-left:auto;display:flex;flex-direction:column;gap:7px;background:#121a26;border:1px solid #3b4a60;border-radius:11px;padding:10px 12px;min-width:210px;font-size:13px}.bot-last-throw .label{color:var(--muted);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px}.bot-throws-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.bot-throw{display:flex;flex-direction:column;gap:5px;padding:8px 7px;border-radius:8px;background:#1b2432;border:1px solid #344257;min-width:0;min-height:66px;justify-content:center}.bot-throw .throw-number{color:var(--muted);font-size:10px;font-weight:800;text-transform:uppercase}.bot-throw .hit{color:var(--gold);font-size:15px;font-weight:900;overflow-wrap:anywhere;line-height:1.15}.bot-throw .detail{color:var(--muted);font-size:10px}.bot-throw.pending .hit{color:#8292a8}.hint{font-size:11px;color:var(--muted)}
+.board-content{display:grid;grid-template-columns:minmax(0,1fr);gap:4px;flex:1;min-height:0;align-items:center}
+.dartboard-wrap{width:100%;height:100%;min-height:0;display:flex;align-items:center;justify-content:center;position:relative}
+.dartboard{display:block;width:min(116.28%,calc(116.28vh - 168.3px));height:auto;max-height:116.28%;transform:translate(10px,-38px);filter:drop-shadow(0 8px 14px #0007);overflow:visible}
+.dart-sector{stroke:#0b0d10;stroke-width:1.5;cursor:pointer;transition:filter .12s,opacity .12s}
+.dart-sector:hover{filter:brightness(1.22);stroke:#fff;stroke-width:2.5}
+.dart-sector.hit-flash{animation:sectorFlash .52s ease-out}
+.dart-sector.hit-flash-red{animation:sectorFlashRed .5s ease-out}
+.dartboard.frame-flash-red{animation:boardFrameRed .5s ease-out}
+.dartboard.frame-flash-green{animation:boardFrameGreen .5s ease-out}
+@keyframes boardFrameRed{0%,100%{filter:drop-shadow(0 8px 14px #0007)}20%,60%{filter:drop-shadow(0 0 7px #ff2638) drop-shadow(0 0 15px #ff2638) drop-shadow(0 8px 14px #0007)}}
+@keyframes boardFrameGreen{0%,100%{filter:drop-shadow(0 8px 14px #0007)}20%,60%{filter:drop-shadow(0 0 7px #39ff88) drop-shadow(0 0 15px #39ff88) drop-shadow(0 8px 14px #0007)}}
+.dart-number.number-flash-red{animation:numberFlashRed .5s ease-out}
+.dart-number.number-flash-green{animation:numberFlashGreen .5s ease-out}
+@keyframes numberFlashRed{0%,100%{fill:#f4f4ef;filter:none}20%,60%{fill:#ff2638;filter:drop-shadow(0 0 5px #ff2638) drop-shadow(0 0 9px #ff2638)}}
+@keyframes numberFlashGreen{0%,100%{fill:#f4f4ef;filter:none}20%,60%{fill:#39ff88;filter:drop-shadow(0 0 5px #39ff88) drop-shadow(0 0 9px #39ff88)}}
+@keyframes sectorFlashRed{0%,100%{filter:brightness(1);stroke:#0b0d10;stroke-width:1.5;opacity:1}18%,58%{filter:brightness(2.2);stroke:#ff2638;stroke-width:5;opacity:1}38%{filter:brightness(1.8);stroke:#ff2638;stroke-width:4;opacity:1}}
+.dart-number{font:900 16px Arial,sans-serif;fill:#f4f4ef;text-anchor:middle;dominant-baseline:middle;pointer-events:none;paint-order:stroke;stroke:#141414;stroke-width:2px;stroke-linejoin:round}
+.dart-brand{font:900 9px Arial,sans-serif;fill:#d9e1e7;letter-spacing:1px;text-anchor:middle;pointer-events:none}
+.dartboard-ring-label{font:700 8px Arial,sans-serif;fill:#d5dce4;text-anchor:middle;pointer-events:none}
+@keyframes sectorFlash{0%{filter:brightness(2.2);stroke:#fff;stroke-width:5;opacity:1}50%{filter:brightness(1.7);stroke:#44d7a8;stroke-width:4}100%{filter:brightness(1);stroke:#0b0d10;stroke-width:1.5;opacity:1}}
+.number-grid{display:none;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;flex:1;min-height:0}
+.num-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:0;background:var(--panel2);color:var(--text);border:1px solid #344257;border-radius:12px;padding:5px}
+.num-btn:hover{filter:brightness(1.18)}.num-btn .big{font-size:clamp(20px,3vw,33px);font-weight:900;line-height:1}
+.num-btn .small{font-size:10px;color:var(--muted);font-weight:650}.num-btn .mults{display:flex;gap:4px}.mini{width:6px;height:6px;border-radius:50%;background:#4d5e73}.mini.active{background:var(--accent)}
+.num-btn.bull .big{color:var(--gold)}.num-btn .key{font-size:9px;color:#8292a8}
+.num-btn{position:relative;overflow:hidden;gap:3px}
+.num-btn .hit-number{flex:1;display:flex;align-items:center;justify-content:center;width:100%;min-height:24px;cursor:pointer}
+.num-btn .hit-number:active{transform:scale(.94)}
+.num-btn .mult-hit-row{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:3px 0 1px}
+.num-btn .mult-hit{display:flex;align-items:center;justify-content:center;gap:3px;min-width:25px;height:23px;border-radius:6px;background:#121a26;border:1px solid #42516a;color:var(--text);font-size:11px;font-weight:900;cursor:pointer}
+.num-btn .mult-hit:hover{background:#34465e}
+.num-btn .mult-hit.double{color:var(--blue)}
+.num-btn .mult-hit.triple{color:var(--gold)}
+.num-btn .mult-hit .dot{width:5px;height:5px;border-radius:50%;background:currentColor;display:inline-block}
+.num-btn .target-flash{animation:targetFlash .42s ease-out}
+@keyframes targetFlash{0%{background:#f9fff9;box-shadow:0 0 0 3px var(--accent),0 0 24px var(--accent);color:#091c16;transform:scale(1.035)}55%{background:#4b8e7d;box-shadow:0 0 16px #44d7a8aa}100%{transform:scale(1);box-shadow:none}}
+.num-btn .hit-number.target-flash{border-radius:8px}
+.sidebar{grid-column:1;grid-row:1;display:flex;flex-direction:column;gap:10px;min-height:0}.player-one-throws{margin-left:0;min-width:190px;width:auto;flex-shrink:1}.sidebar .bot-last-throw .bot-throws-list{gap:4px}.sidebar .bot-throw{padding:4px 5px}
+.panel{background:var(--panel);border:1px solid #2b3749;border-radius:16px;padding:12px}
+.panel h3{font-size:12px;margin:0 0 10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.dartpad{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.dartpad button{padding:12px 4px;background:#2a374a;color:var(--text);font-size:13px}.dartpad button.selected{background:var(--gold);color:#29200b}
+.dartpad .wide{grid-column:span 3}.pad-note{font-size:10px;color:var(--muted);line-height:1.4;margin-top:9px}
+.action-row{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}.action-row button{padding:11px 5px;font-size:12px}
+.last-visit{font-size:12px;line-height:1.7;color:var(--muted);min-height:40px}.last-visit strong{color:var(--text)}
+.history{overflow:auto;min-height:0;flex:1}.history-row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid #2b3749;font-size:11px}.history-row span:last-child{color:var(--muted);text-align:right}
+.toast{position:fixed;left:50%;top:18px;transform:translateX(-50%);background:#e8fff7;color:#08281f;padding:13px 20px;border-radius:13px;box-shadow:0 12px 40px #0007;font-weight:850;z-index:5;display:none;max-width:90%;text-align:center}
+.overlay{position:fixed;inset:0;background:#070b12dd;display:none;place-items:center;z-index:4;padding:20px}.modal{background:var(--panel);border:1px solid #3b4a60;border-radius:22px;padding:28px;max-width:480px;width:100%;text-align:center;box-shadow:0 25px 90px #0009}.modal h2{font-size:clamp(28px,6vw,42px);margin:5px 0 10px}.modal p{color:var(--muted);line-height:1.5}
+@media(max-width:850px){.app{zoom:.75;width:133.333%;height:133.333dvh;min-height:0;max-width:none;overflow:hidden;padding:8px;gap:7px}.game{grid-template-columns:minmax(205px,.75fr) minmax(0,1.25fr);grid-template-rows:minmax(0,1fr);overflow:hidden}.sidebar{display:grid;grid-template-columns:1fr 1fr}.history-panel{display:none}.scoreline{grid-template-columns:minmax(0,1fr)}.player{padding:9px}.player.active{padding:8px}.marks{gap:6px;margin-top:8px;width:100%}.mark-cell{height:clamp(54px,7vh,66px)}.mark-cell .num{font-size:clamp(14px,1.8vw,18px)}.mark-cell .num.bull-label{font-size:clamp(9px,1.3vw,12px)}.mark-cell .slashes{font-size:clamp(21px,2.8vw,26px);min-height:26px}.center{padding:6px}.setup{gap:7px}.setup input,.setup select{width:105px}.board-content{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(220px,1fr) auto}.dartboard{width:min(116.28%,calc(116.28vh - 185.64px));max-height:116.28%;transform:translate(10px,-38px)}.number-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.num-btn{min-height:60px}}
+@media(max-width:520px){.app{zoom:.62;width:161.29%;height:161.29dvh;min-height:0;overflow:hidden;padding:8px}.game{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr);overflow:hidden}.sidebar{grid-column:1;grid-row:1}.board{grid-column:1;grid-row:2}.sub{display:none}.header-actions button{padding:9px}.scoreline{gap:5px;grid-template-columns:minmax(0,1fr)}.player{padding:7px}.player.active{padding:6px}.turn-tag{font-size:8px;padding:3px 4px}.statline{font-size:9px}.marks{gap:4px;width:100%;max-width:100%}.mark-cell{height:56px;padding:3px;min-width:0}.mark-cell .num{font-size:clamp(13px,2.2vw,17px)}.mark-cell .num.bull-label{font-size:clamp(8px,1.8vw,11px);letter-spacing:-.2px;transform:none}.mark-cell .slashes{font-size:22px;letter-spacing:-2px;min-height:24px}.game{grid-template-rows:minmax(0,1fr)}.sidebar{grid-template-columns:1fr}.board-content{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(270px,1fr) auto}.dartboard{width:min(116.28%,348.84px);max-height:348.84px;transform:translate(10px,-38px)}.number-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}.num-btn{border-radius:8px;min-height:88px}.num-btn .small{font-size:9px}.panel{padding:9px}}
+
+/* Modern darts dashboard refresh — visual layer only */
+:root{
+ --bg:#080d18;--panel:#111b2c;--panel2:#19263a;--text:#f4f7ff;--muted:#91a2bb;
+ --accent:#a3ff3f;--red:#ff496c;--blue:#52d8ff;--gold:#ffc857;
+}
+html,body{background:radial-gradient(ellipse at 50% -20%,#1a2c46 0%,#0a1220 48%,#070b13 100%);color:var(--text)}
+.app{max-width:1600px;padding:12px;gap:11px}
+header{padding:2px 3px}
+.dart-icon{border-radius:14px;background:linear-gradient(145deg,#c5ff68,#68d52c);color:#10200a;box-shadow:0 5px 22px #a3ff3f25}
+h1{font-weight:900;letter-spacing:-1px}
+.sub{color:#8093ad}
+.round-badge{background:#121e31;border:1px solid #31435d;color:#d7f7a3;border-radius:999px;padding:9px 15px}
+.secondary{background:#1b2a40;color:#e7efff;border:1px solid #344760}
+.secondary:hover{background:#263a55}
+.primary{background:linear-gradient(135deg,#b8ff59,#85e52f);color:#132009;box-shadow:0 4px 18px #9aff3c20}
+.primary:hover{filter:brightness(1.08)}
+.danger{background:#48243a;color:#ffdce8;border:1px solid #743b58}
+.setup{background:linear-gradient(135deg,#121e30,#101827);border:1px solid #293b53;border-radius:16px;box-shadow:0 8px 24px #0002}
+.setup label{color:#a4b4ca}
+.setup input,.setup select{background:#0b1422;border:1px solid #344760;border-radius:10px;color:#f2f6ff;outline:none}
+.setup input:focus,.setup select:focus{border-color:var(--accent);box-shadow:0 0 0 3px #a3ff3f20}
+.player,.board,.panel{background:linear-gradient(145deg,#142137,#101a2a);border:1px solid #2b3d56;border-radius:19px;box-shadow:0 12px 28px #0002}
+.player{padding:15px 17px}
+.player.active{border:1px solid var(--accent);padding:14px 16px;box-shadow:0 0 0 1px #a3ff3f40,0 10px 28px #a3ff3f0d}
+.player.right.active{border-color:var(--blue);box-shadow:0 0 0 1px #52d8ff40,0 10px 28px #52d8ff0d}
+.turn-tag{background:var(--accent);color:#17220c;border-radius:999px;padding:5px 9px}
+.right .turn-tag{background:var(--blue);color:#09202a}
+.points{letter-spacing:-1.5px;font-variant-numeric:tabular-nums}
+.mark-cell{background:#0b1422;border:1px solid #2b3d55;border-radius:11px}
+.mark-cell.closed{background:linear-gradient(145deg,#176b4b,#104c39);border-color:#52e59a;box-shadow:inset 0 0 0 1px #52e59a30}
+.board{padding:12px}
+.board-head h2{font-size:13px;font-weight:850;letter-spacing:.3px}
+.bot-last-throw{background:#0b1422;border:1px solid #30435d;border-radius:13px}
+.bot-throw{background:#142137;border:1px solid #2b3d55;border-radius:10px}
+.num-btn{background:linear-gradient(145deg,#1b2a40,#152238);border-color:#344a66;border-radius:14px}
+.num-btn:hover{filter:brightness(1.15);border-color:#6685a8}
+.num-btn .mult-hit{background:#0b1422;border-color:#354b67;border-radius:8px}
+.num-btn .mult-hit.double{color:#52d8ff}
+.num-btn .mult-hit.triple{color:#c2ff69}
+.dartpad button{background:#20324b;border:1px solid #344b67;border-radius:10px}
+.dartpad button.selected{background:var(--gold);color:#30240a}
+.panel h3{color:#a8bad2}
+#missStatus{background:linear-gradient(135deg,#0c1625,#17263b)!important;border-color:#354b67!important;border-radius:14px!important}
+.history-row{border-color:#263951}
+.toast{background:#eaffd8;color:#17230c;border:1px solid #b5f66e;border-radius:14px}
+.overlay{backdrop-filter:blur(10px);background:#050913d9}
+.modal{background:linear-gradient(145deg,#17253a,#101a2a);border:1px solid #3a506d;border-radius:24px}
+button{transition:transform .12s ease,filter .16s ease,background .16s ease}
+button:focus-visible{outline:3px solid #a3ff3f;outline-offset:2px}
+@media(max-width:850px){.app{padding:9px}.player,.board,.panel{border-radius:15px}}
+
+
+/* Dartsmind-inspired refinement: preserve the lime accent, update surfaces and controls only */
+:root{--bg:#0b0d12;--panel:#171a21;--panel2:#20252e;--text:#f4f5f7;--muted:#9ba3af;--accent:#a3ff3f;--red:#ff5b68;--blue:#67c8ff;--gold:#e8b85a}
+html,body{background:radial-gradient(ellipse at 50% -24%,#252a34 0%,#11141a 48%,#090b0f 100%)}
+.app{max-width:1580px;padding:12px;gap:10px}
+.dart-icon{background:linear-gradient(145deg,#a3ff3f,#78c92d);box-shadow:0 4px 18px #a3ff3f18;border-radius:12px}
+.round-badge{background:#1a1e25;border-color:#343a44;color:#dce2e8;border-radius:10px}
+.secondary{background:#262b34;color:#e8ebef;border:1px solid #3a414c;border-radius:9px}
+.secondary:hover{background:#303742;border-color:#515b69}
+.primary{background:var(--accent);color:#14200b;box-shadow:0 3px 12px #a3ff3f14;border-radius:9px}
+.primary:hover{filter:brightness(1.06)}
+.danger{background:#382329;color:#ffd9dd;border:1px solid #624047;border-radius:9px}
+.setup{background:#171a20;border:1px solid #303640;border-radius:13px;box-shadow:0 5px 18px #0002}
+.setup label{color:#aab1bc}
+.setup input,.setup select{background:#0f1217;border:1px solid #353b45;border-radius:8px;color:#f2f4f6}
+.setup input:focus,.setup select:focus{border-color:var(--accent);box-shadow:0 0 0 2px #a3ff3f20}
+.player,.board,.panel{background:#171a20;border:1px solid #303640;border-radius:15px;box-shadow:0 7px 22px #0002}
+.player.active{border:1px solid var(--accent);box-shadow:0 0 0 1px #a3ff3f30,0 5px 18px #a3ff3f08}
+.player.right.active{border-color:var(--blue);box-shadow:0 0 0 1px #67c8ff30,0 5px 18px #67c8ff08}
+.turn-tag{background:var(--accent);color:#17210d;border-radius:7px}
+.right .turn-tag{background:var(--blue);color:#10202b}
+.mark-cell{background:#101318;border:1px solid #303640;border-radius:9px}
+.mark-cell.closed{background:#1b3326;border-color:#527b3b;box-shadow:inset 0 0 0 1px #a3ff3f12}
+.board{padding:11px}
+.bot-last-throw{background:#101318;border:1px solid #343a44;border-radius:10px}
+.bot-throw{background:#1a1e25;border:1px solid #303640;border-radius:8px}
+.num-btn{background:#20242b;border:1px solid #363d47;border-radius:10px}
+.num-btn:hover{filter:brightness(1.12);border-color:#59616c}
+.num-btn .mult-hit{background:#111419;border:1px solid #383f49;border-radius:6px}
+.num-btn .mult-hit.double{color:var(--blue)}
+.num-btn .mult-hit.triple{color:var(--accent)}
+.dartpad button{background:#252a32;border:1px solid #3a414b;border-radius:8px}
+.dartpad button.selected{background:var(--gold);color:#211b0e}
+.panel h3{color:#aab1bc}
+#missStatus{background:#14171d!important;border-color:#383f49!important;border-radius:10px!important}
+.history-row{border-color:#2d333c}
+.toast{background:#eaffd8;color:#17220d;border:1px solid #a3ff3f;border-radius:10px}
+.overlay{backdrop-filter:blur(8px);background:#050608dc}
+.modal{background:#1a1e25;border:1px solid #3a414b;border-radius:18px}
+button{transition:transform .1s ease,filter .14s ease,background .14s ease}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media(max-width:850px){.app{padding:9px}.player,.board,.panel{border-radius:12px}}
+
+/* Refined Darts-used panel: cleaner typography, subtle lime outline, and restrained contrast. */
+#missStatus{
+  font-family:Arial,Helvetica,sans-serif!important;
+  font-size:clamp(20px,2vw,26px)!important;
+  font-weight:700!important;
+  letter-spacing:.15px!important;
+  line-height:1.25!important;
+  color:var(--accent)!important;
+  background:#171b20!important;
+  border:1px solid #52613f!important;
+  border-left:4px solid var(--accent)!important;
+  border-radius:12px!important;
+  padding:18px 14px!important;
+  box-shadow:inset 0 0 0 1px #242b31!important;
+}
+/* Match Darts used this turn text to the lime round-counter accent. */
+#missStatus{color:var(--accent)!important}
+/* Darts-used panel: extend downward so its bottom aligns with the dartboard panel. */
+.sidebar>.panel{display:flex;flex-direction:column;flex:1;min-height:0}
+#missStatus{width:100%!important;flex:1;display:flex;align-items:center;justify-content:center;box-sizing:border-box}
+/* Round counter: match the lime accent, increase text size, and center horizontally at the same header height. */
+.round-badge{color:var(--accent);font-size:37px;position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:20}
+
+
+/* Stabilize the dartboard position while score/history content updates during play. */
+.board-head{flex:0 0 104px;height:104px;min-height:104px;max-height:104px;overflow:hidden;align-items:stretch}
+.board-head>.bot-last-throw{min-height:0;height:100%;max-height:100%;box-sizing:border-box}
+.bot-throws-list{min-height:0}
+.bot-throw{min-height:0;overflow:hidden}
+.board-content{flex:1 1 0;min-height:0;align-items:stretch}
+.dartboard-wrap{flex:1 1 auto;min-height:0;overflow:hidden}
+.dartboard{width:min(105%,calc((100vh - 245px)*1.05));height:auto;max-height:105%;aspect-ratio:1;transform:translate(10px,-16px);flex:0 0 auto}
+@media(max-width:850px){
+ .board-head{flex-basis:92px;height:92px;min-height:92px;max-height:92px}
+ .dartboard{width:min(105%,calc((100dvh - 285px)*1.05));max-height:105%;transform:translate(6px,-16px)}
+}
+@media(max-width:520px){
+ .board-head{flex-basis:86px;height:86px;min-height:86px;max-height:86px}
+ .dartboard{width:min(105%,315px);max-height:105%;transform:translate(4px,-16px)}
+}
+
+
+/* Keep the dartboard above nearby UI and prevent its top/bottom from being clipped. */
+.board-content{position:relative;z-index:2;overflow:visible}
+.dartboard-wrap{position:relative;z-index:5;overflow:visible}
+.dartboard{position:relative;z-index:6}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+ <div class="brand"><div class="dart-icon">➤</div><div><h1 id="appTitle">DARTS <span style="color:var(--accent)">GAME</span></h1><div class="sub">Two-player scoreboard</div></div></div>
+ <div class="header-actions"><span id="roundBadge" class="round-badge">ROUND 1</span><button class="secondary" id="skipBtn" title="Skip turn (Space)">Skip</button><button class="secondary" id="undoBtn">↶ Undo</button><button class="secondary" id="newBtn">New game</button></div>
+</header>
+<div class="setup">
+ <label>Player 1 <input id="name1" maxlength="18" value="Player 1" autocomplete="off" spellcheck="false"></label>
+ <label>Player 2 <input id="name2" maxlength="18" value="Player 2" autocomplete="off" spellcheck="false"></label>
+ <label>Opponent <select id="opponentMode" aria-label="Choose human or bot opponent"><option value="human">Real player</option><option value="bot" selected>Bot</option></select></label>
+ <label id="difficultyWrap" style="display:none">Bot difficulty <select id="botDifficulty" aria-label="Choose bot difficulty"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option><option value="pro">Pro</option></select></label>
+ <label>Game <select id="gameType" aria-label="Choose game"><option value="cricket">Cricket</option><option value="301">301</option><option value="501">501</option></select></label>
+  <label id="cricketModeWrap">Cricket type <select id="gameMode" aria-label="Choose Cricket game type"><option value="standard">Standard</option><option value="cutthroat" selected>Cut-Throat</option></select></label>
+  <label id="doubleInWrap" style="display:none">Double In <select id="doubleIn"><option value="off">Off</option><option value="on">On</option></select></label>
+  <label id="doubleOutWrap" style="display:none">Double Out <select id="doubleOut"><option value="on" selected>On</option><option value="off">Off</option></select></label>
+ <button class="primary" id="applyBtn">Apply settings</button>
+</div>
+
+<section class="game">
+ <div class="board">
+  <div class="board-head"><div class="bot-last-throw player-one-throws" id="playerOneThrows" aria-live="polite"><span class="label">Player 1’s three darts · last turn</span><div class="bot-throws-list" id="playerOneThrowsList"><div class="bot-throw pending"><span class="throw-number">Dart 1</span><span class="hit">—</span><span class="detail">Waiting</span></div><div class="bot-throw pending"><span class="throw-number">Dart 2</span><span class="hit">—</span><span class="detail">Waiting</span></div><div class="bot-throw pending"><span class="throw-number">Dart 3</span><span class="hit">—</span><span class="detail">Waiting</span></div></div></div><div class="bot-last-throw" id="botLastThrow" aria-live="polite"><span class="label" id="playerTwoThrowsLabel">Bot’s three darts · last turn</span><div class="bot-throws-list" id="botThrowsList"><div class="bot-throw pending"><span class="throw-number">Dart 1</span><span class="hit">—</span><span class="detail">Waiting</span></div><div class="bot-throw pending"><span class="throw-number">Dart 2</span><span class="hit">—</span><span class="detail">Waiting</span></div><div class="bot-throw pending"><span class="throw-number">Dart 3</span><span class="hit">—</span><span class="detail">Waiting</span></div></div></div></div>
+  <div class="board-content">
+   <div class="dartboard-wrap"><svg id="dartboard" class="dartboard" viewBox="0 0 500 500" role="img" aria-label="Interactive dartboard"></svg></div>
+   <div class="number-grid" id="numberGrid" aria-label="Quick scoring targets"></div>
+  </div>
+ </div>
+ <aside class="sidebar">
+  <section class="scoreline">
+ <div class="player active" id="player0">
+  <div class="player-top"><div class="player-name" id="pname0">Player 1</div><span class="turn-tag">YOUR TURN</span></div>
+  <div class="points" id="score0">0</div><div class="statline"><span>Points</span></div>
+  <div class="marks" id="marks0"></div>
+ </div>
+ <div class="center"><div class="label" id="modeLabel"></div><div class="round" id="round">1</div><div class="dartcount" id="dartcount">Dart 1 of 3</div><div class="turn-darts" id="turnDarts"><i class="dart-dot"></i><i class="dart-dot"></i><i class="dart-dot"></i></div><div class="label" id="turnLabel">PLAYER 1</div></div>
+ <div class="player right" id="player1">
+  <div class="player-top"><div class="player-name" id="pname1">Player 2</div><span class="turn-tag">YOUR TURN</span></div>
+  <div class="points" id="score1">0</div><div class="statline"><span>Points</span></div>
+  <div class="marks" id="marks1"></div>
+ </div>
+</section>
+   <div class="panel"><div class="dartpad">
+  </div><div id="missStatus" style="font-size:clamp(24px,2.6vw,34px);font-weight:900;color:var(--gold);margin:12px 0;padding:16px 10px;text-align:center;background:#121a26;border:2px solid #42516a;border-radius:12px;letter-spacing:.4px;width:calc(100vw - 48px);box-sizing:border-box">Darts used 0 / 3</div></div>
+ </aside>
+</section>
+</div>
+<div class="toast" id="toast"></div>
+<div class="overlay" id="overlay"><div class="modal"><div style="font-size:42px">🏆</div><h2 id="winTitle">Winner!</h2><p id="winText"></p><button class="primary" id="playAgain">Play again</button></div></div>
+<script>
+(() => {
+ const nums=[20,19,18,17,16,15,25], labels={25:'BULL'};
+ let state, selectedMult=1, snapshots=[], toastTimer, botTimer=null, botGeneration=0;
+ const $=id=>document.getElementById(id);
+ const clone=o=>JSON.parse(JSON.stringify(o));
+ function initial(){return {gameType:$('gameType').value,doubleIn:$('doubleIn').value==='on',doubleOut:$('doubleOut').value==='on',mode:$('gameMode').value,opponent:$('opponentMode').value,difficulty:$('botDifficulty').value,players:[
+  {name:$('name1').value.trim()||'Player 1',score:$('gameType').value==='cricket'?0:parseInt($('gameType').value,10),opened:false,marks:{20:0,19:0,18:0,17:0,16:0,15:0,25:0}},
+  {name:$('name2').value.trim()||($('opponentMode').value==='bot'?'Bot':'Player 2'),score:$('gameType').value==='cricket'?0:parseInt($('gameType').value,10),opened:false,marks:{20:0,19:0,18:0,17:0,16:0,15:0,25:0}}
+ ],active:0,round:1,darts:0,turnHits:[],turnStartScore:null,history:[],winner:null};}
+ function save(){snapshots.push(clone(state));if(snapshots.length>150)snapshots.shift()}
+ function isClosed(p,n){return p.marks[n]>=3}
+ function allClosed(p){return nums.every(n=>isClosed(p,n))}
+ const boardOrder=[20,1,18,4,13,6,10,15,2,17,3,19,7,16,8,11,14,9,12,5];
+ const polar=(r,a)=>({x:250+r*Math.cos(a*Math.PI/180),y:250+r*Math.sin(a*Math.PI/180)});
+ function ringSectorPath(r1,r2,a1,a2){
+  const p1=polar(r2,a1),p2=polar(r2,a2),p3=polar(r1,a2),p4=polar(r1,a1);
+  return `M ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} A ${r2} ${r2} 0 0 1 ${p2.x.toFixed(2)} ${p2.y.toFixed(2)} L ${p3.x.toFixed(2)} ${p3.y.toFixed(2)} A ${r1} ${r1} 0 0 0 ${p4.x.toFixed(2)} ${p4.y.toFixed(2)} Z`;
+ }
+ function flashBoardFrame(color){
+  const board=$('dartboard');
+  board.classList.remove('frame-flash-red','frame-flash-green');
+  void board.getBoundingClientRect().width;
+  board.classList.add(color==='green'?'frame-flash-green':'frame-flash-red');
+  setTimeout(()=>board.classList.remove('frame-flash-red','frame-flash-green'),560);
+ }
+ function flashMissNumbers(){
+  const board=$('dartboard');
+  board.querySelectorAll('.dart-number').forEach(label=>{
+   const n=Number(label.dataset.boardNum);
+   if(n>=1&&n<=14){label.classList.remove('number-flash-red','number-flash-green');void label.getBoundingClientRect().width;label.classList.add('number-flash-red');setTimeout(()=>label.classList.remove('number-flash-red'),560);}
+  });
+ }
+ function boardSector(n,m){
+  const board=$('dartboard');
+  if(n>=1&&n<=14)flashBoardFrame('red');
+  else if((n>=15&&n<=20)||n===25)flashBoardFrame('green');
+  else {flashBoardFrame('red');flashMissNumbers();}
+  const isRed=n>=1&&n<=14;
+  const isGreen=(n>=15&&n<=20)||n===25;
+  const els=(isRed||isGreen)&&n!==25
+   ? [...board.querySelectorAll(`.dart-sector[data-board-num="${n}"]`)]
+   : [board.querySelector(`.dart-sector[data-board-num="${n}"][data-board-mult="${m}"]`)].filter(Boolean);
+  els.forEach(el=>{
+   el.classList.remove('hit-flash','hit-flash-red');void el.getBoundingClientRect().width;
+   el.classList.add(isRed?'hit-flash-red':'hit-flash');
+   setTimeout(()=>el.classList.remove('hit-flash','hit-flash-red'),560);
+  });
+  if(isRed||isGreen){
+   const label=board.querySelector(`.dart-number[data-board-num="${n}"]`);
+   if(label){label.classList.remove('number-flash-red','number-flash-green');void label.getBoundingClientRect().width;label.classList.add(isRed?'number-flash-red':'number-flash-green');setTimeout(()=>label.classList.remove('number-flash-red','number-flash-green'),560);}
+  }
+ }
+ function drawDartboard(){
+  const svg=$('dartboard');let out=[];
+  // Black outer number ring, ivory/black sisal beds and thin red/green wire rings.
+  out.push('<defs><radialGradient id="boardEdge"><stop offset="78%" stop-color="#111214"/><stop offset="94%" stop-color="#050607"/><stop offset="100%" stop-color="#555b60"/></radialGradient><radialGradient id="sisalIvory"><stop offset="0%" stop-color="#f5efdf"/><stop offset="100%" stop-color="#ded6c3"/></radialGradient><radialGradient id="sisalBlack"><stop offset="0%" stop-color="#202124"/><stop offset="100%" stop-color="#0e0f11"/></radialGradient></defs>');
+  out.push('<circle data-board-miss="true" cx="250" cy="250" r="246" fill="url(#boardEdge)" stroke="#73777a" stroke-width="2"/>');
+  out.push('<circle cx="250" cy="250" r="239" fill="#090a0c" stroke="#d8d8d3" stroke-width="1.5"/>');
+  out.push('<circle cx="250" cy="250" r="204" fill="#111214" stroke="#55585b" stroke-width="1.2"/>');
+  boardOrder.forEach((n,i)=>{
+   const mid=-90+i*18, a1=mid-9, a2=mid+9, odd=i%2===1;
+   const singleFill=odd?'url(#sisalIvory)':'url(#sisalBlack)';
+   const ringFill=i%2===0?'#c92d38':'#16874d';
+   // Separate clickable beds with fine wire-like borders.
+   out.push(`<path class="dart-sector" data-board-num="${n}" data-board-mult="1" d="${ringSectorPath(105,188,a1,a2)}" fill="${singleFill}" stroke="#77756f" stroke-width="1.05" aria-label="Single ${n}"><title>Single ${n}</title></path>`);
+   out.push(`<path class="dart-sector" data-board-num="${n}" data-board-mult="2" d="${ringSectorPath(188,204,a1,a2)}" fill="${ringFill}" stroke="#b9b9b2" stroke-width="1.1" aria-label="Double ${n}"><title>Double ${n}</title></path>`);
+   out.push(`<path class="dart-sector" data-board-num="${n}" data-board-mult="1" d="${ringSectorPath(18,87,a1,a2)}" fill="${singleFill}" stroke="#77756f" stroke-width="1.05" aria-label="Single ${n}"><title>Single ${n}</title></path>`);
+   out.push(`<path class="dart-sector" data-board-num="${n}" data-board-mult="3" d="${ringSectorPath(87,105,a1,a2)}" fill="${ringFill}" stroke="#c3c4bd" stroke-width="1.05" aria-label="Triple ${n}"><title>Triple ${n}</title></path>`);
+   const label=polar(222,mid);
+   out.push(`<text class="dart-number" data-board-num="${n}" x="${label.x.toFixed(2)}" y="${label.y.toFixed(2)}" style="font-size:22px;stroke-width:2.8px">${n}</text>`);
+  });
+  // Bull rings.
+  out.push('<circle class="dart-sector" data-board-num="25" data-board-mult="1" cx="250" cy="250" r="18" fill="#16874d" stroke="#c5c6bd" stroke-width="1.4" aria-label="Outer bull, one mark"><title>Outer bull · 1 mark</title></circle>');
+  out.push('<circle class="dart-sector" data-board-num="25" data-board-mult="2" cx="250" cy="250" r="8" fill="#c92d38" stroke="#bfc0b8" stroke-width="1.2" aria-label="Inner bull, two marks"><title>Inner bull · 2 marks</title></circle>');
+  [87,105,188,204].forEach(r=>out.push(`<circle cx="250" cy="250" r="${r}" fill="none" stroke="#bfc0b7" stroke-width=".85" pointer-events="none"/>`));
+  out.push('<circle cx="250" cy="250" r="239" fill="none" stroke="#eeeeea" stroke-width="1.2"/>');
+  out.push('<circle cx="250" cy="250" r="204.5" fill="none" stroke="#85888a" stroke-width="1"/>');
+  out.push('<circle data-board-miss="true" cx="250" cy="250" r="221" fill="none" stroke="transparent" stroke-width="34" pointer-events="stroke" aria-label="Miss"/>');
+  svg.innerHTML=out.join('');
+  svg.addEventListener('click',e=>{
+   if(state.winner)return;
+   const missZone=e.target.closest('[data-board-miss="true"]');
+   if(missZone){flashBoardFrame('red');flashMissNumbers();record(0,0);showToast('MISS — lost dart');return;}
+   const hit=e.target.closest('[data-board-num]');
+   if(!hit)return;
+   const n=Number(hit.dataset.boardNum),m=Number(hit.dataset.boardMult);
+   boardSector(n,m);
+   const validTarget=state.gameType==='cricket'?nums.includes(n):(n>=1&&n<=20)||n===25;
+   if(!validTarget){record(0,0);showToast('MISS — lost dart');return}
+   record(n,m);
+  });
+ }
+ function render(){
+  $('appTitle').innerHTML=state.gameType==='cricket'?'CRICKET <span style="color:var(--accent)">DARTS</span>':state.gameType+' <span style="color:var(--accent)">DARTS</span>';
+  state.players.forEach((p,i)=>{
+   $('pname'+i).textContent=p.name;$('score'+i).textContent=p.score;$('marks'+i).style.display=state.gameType==='cricket'?'grid':'none';$('player'+i).querySelector('.statline span').textContent=state.gameType==='cricket'?'Points':'Remaining';
+   $('player'+i).querySelector('.turn-tag').textContent=(state.opponent==='bot'&&i===1)?'BOT TURN':'YOUR TURN';
+   $('player'+i).classList.toggle('active',state.active===i);
+   $('player'+i).querySelector('.turn-tag').style.visibility=state.active===i?'visible':'hidden';
+   $('marks'+i).innerHTML=nums.map(n=>{let m=Math.min(3,p.marks[n]);let cross=m===0?'':m===1?'/':m===2?'<span class="mark-double-x">×</span>':'<span class="mark-closed-x">✕</span>';return `<div class="mark-cell ${m>=3?'closed':''}"><span class="num ${n===25?'bull-label':''}">${n===25?'BULL':n}</span><span class="slashes">${cross}</span></div>`}).join('');
+  });
+  $('modeLabel').textContent=state.gameType==='cricket'?(state.mode==='cutthroat'?'CUT-THROAT':'STANDARD CRICKET'):(state.gameType+' · '+(state.doubleIn?'DOUBLE IN':'OPEN IN')+' · '+(state.doubleOut?'DOUBLE OUT':'OPEN OUT'));
+  $('round').textContent=state.round;$('roundBadge').textContent=`ROUND ${state.round}`;$('dartcount').textContent=`Dart ${Math.min(state.darts+1,3)} of 3`;
+  $('missStatus').textContent=`Darts used ${state.darts} / 3`;
+  $('turnLabel').textContent=state.players[state.active].name.toUpperCase();
+  $('turnDarts').innerHTML=[0,1,2].map(i=>`<i class="dart-dot ${i<state.darts?'used':''}"></i>`).join('');
+  function renderThreeDarts(playerIndex, listId){
+   const playerName=state.players[playerIndex].name;
+   const latest=state.history.find(x=>x.player===playerName);
+   const throws=latest?state.history.filter(x=>x.player===playerName&&x.round===latest.round).sort((a,b)=>a.dart-b.dart):[];
+   $(listId).innerHTML=[1,2,3].map(dart=>{const hit=throws.find(x=>x.dart===dart);return `<div class="bot-throw ${hit?'':'pending'}"><span class="throw-number">Dart ${dart}</span><span class="hit">${hit?esc(hit.hit):'—'}</span><span class="detail">${hit?`${hit.points>=0?'+':''}${hit.points} pts`:'Waiting'}</span></div>`}).join('');
+  }
+  $('playerOneThrows').querySelector('.label').textContent=state.players[0].name+'’s three darts · last turn';
+  $('playerTwoThrowsLabel').textContent=state.players[1].name+'’s three darts · last turn';
+  $('botLastThrow').style.display='flex';
+  renderThreeDarts(0,'playerOneThrowsList');
+  renderThreeDarts(1,'botThrowsList');
+  $('undoBtn').disabled=snapshots.length===0;
+  const scoringTargets=state.gameType==='cricket'?nums:[20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,25];
+  $('numberGrid').innerHTML=scoringTargets.map(n=>{let a=state.players[0].marks[n]||0,b=state.players[1].marks[n]||0;return `<div class="num-btn ${n===25?'bull':''}" data-target="${n}">
+   <div class="hit-number" data-hit="${n}" title="Single ${n===25?'Bull':n}" role="button" tabindex="0"><span class="big">${n===25?'BULL':n}</span></div>
+   <div class="mult-hit-row">
+    <button class="mult-hit double" data-hit="${n}" data-mult-hit="2" title="${n===25?'Inner bull (2 marks)':'Double '+n}" aria-label="${n===25?'Inner bull, 2 marks':'Double '+n}"><i class="dot"></i><i class="dot"></i></button>
+    ${n===25?'':`<button class="mult-hit triple" data-hit="${n}" data-mult-hit="3" title="Triple ${n}" aria-label="Triple ${n}"><i class="dot"></i><i class="dot"></i><i class="dot"></i></button>`}
+   </div>
+   <span class="small">${state.gameType==='cricket'?(a>=3&&b>=3?'CLOSED':`P1 ${Math.min(a,3)}/3 · P2 ${Math.min(b,3)}/3`):'SINGLE · DOUBLE · TRIPLE'}</span>
+  </div>`}).join('');
+ }
+ function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+ function showToast(t){$('toast').textContent=t;$('toast').style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').style.display='none',1700)}
+ function record(n,m){
+  if(state.winner)return;
+  save();const p=state.players[state.active],opp=state.players[1-state.active];
+  let earned=0,bust=false,win=false;
+  if(state.gameType==='cricket'){
+   if(m>0){const marksBefore=p.marks[n],hitMarks=Math.min(m,Math.max(0,3-marksBefore)),extra=m-hitMarks;p.marks[n]=Math.min(3,marksBefore+m);
+    if(extra>0&&!isClosed(opp,n)){earned=extra*(n===25?25:n);if(state.mode==='cutthroat')opp.score+=earned;else p.score+=earned;}}
+  }else{
+   // In 301/501, every valid scoring hit subtracts from the player's remaining total.
+   // Keep the score at the start of the turn so a bust restores the whole turn.
+   if(state.turnStartScore===null)state.turnStartScore=p.score;
+   const value=m===0?0:(n===25?(m===2?50:25):n*m);
+   let counts=true;
+   if(!p.opened){
+    if(state.doubleIn&&m!==2)counts=false;
+    else p.opened=true;
+   }
+   if(counts){
+    earned=value;
+    const remaining=p.score-value;
+    const validFinish=remaining===0&&(!state.doubleOut||m===2);
+    if(remaining<0||(state.doubleOut&&remaining===1)||(remaining===0&&!validFinish)){
+     p.score=state.turnStartScore;
+     bust=true;
+    }else{
+     p.score=remaining;
+     if(validFinish){state.winner=state.active;win=true;}
+    }
+   }
+  }
+  const hitName=n===25?'Bull':String(n),multName=m===0?'Miss':m===1?'Single':m===2?'Double':'Triple',label=m===0?'Miss':`${multName} ${hitName}`;
+  state.darts++;state.turnHits.push({label,points:earned});state.history.unshift({player:p.name,hit:label,points:earned,round:state.round,dart:state.darts});
+  if(m===0){flashBoardFrame('red');flashMissNumbers();showToast('MISS — lost dart');}
+  if(bust){state.darts=3;showToast('BUST — score restored');}
+  if(win)showWinner();
+  if(state.gameType==='cricket')checkWinner();
+  if(!state.winner&&state.darts>=3)endTurn(false);
+  render();scheduleBotTurn();
+ }
+ function checkWinner(){
+  if(state.gameType!=='cricket')return;
+  const p=state.players[state.active],o=state.players[1-state.active];
+  const winningScore=state.mode==='cutthroat'?p.score<=o.score:p.score>=o.score;
+  if(allClosed(p)&&winningScore){state.winner=state.active;showWinner()}
+ }
+ function endTurn(withSnapshot=true){
+  if(state.winner)return;
+  if(withSnapshot)save();
+  state.active=1-state.active;state.darts=0;state.turnHits=[];state.turnStartScore=null;if(state.active===0)state.round++;
+  render();
+  scheduleBotTurn();
+ }
+ function showWinner(){
+  $('winTitle').textContent=state.players[state.winner].name+' wins!';
+  $('winText').textContent=(state.gameType==='cricket'?(state.mode==='cutthroat'?'All seven targets are closed and the winner has the lowest score.':'All seven targets are closed and the winner has the highest score.'):(state.gameType+' finished with a valid checkout.'))+' Start a new game to play again.';
+  $('overlay').style.display='grid';
+ }
+ function startNew(){clearTimeout(botTimer);botGeneration++;state=initial();snapshots=[];$('overlay').style.display='none';render()}
+ function flashTarget(n, target){
+  if(!target)return;
+  target.classList.remove('target-flash');
+  void target.offsetWidth;
+  target.classList.add('target-flash');
+  setTimeout(()=>target.classList.remove('target-flash'),450);
+ }
+ function scheduleBotTurn(){
+  clearTimeout(botTimer);
+  if(!state||state.winner||state.opponent!=='bot'||state.active!==1)return;
+  const generation=botGeneration;
+  botTimer=setTimeout(()=>{if(generation!==botGeneration||state.winner||state.opponent!=='bot'||state.active!==1)return;const hit=chooseBotHit();boardSector(hit.n,hit.m);record(hit.n,hit.m);},650);
+ }
+ function chooseBotHit(){
+  const level=state.difficulty;
+  if(state.gameType!=='cricket'){
+   const p=state.players[1], remaining=p.score;
+   // MVG-inspired X01 strategy: establish the leg on a double when required,
+   // score heavily through treble 20, then switch to a checkout route.
+   let aim={n:20,m:3};
+   if(!p.opened&&state.doubleIn){aim={n:20,m:2};}
+   else if(remaining<=170){
+    const finishes={170:[[20,3],[20,3],[25,2]],167:[[20,3],[19,3],[25,2]],164:[[20,3],[18,3],[25,2]],161:[[20,3],[17,3],[25,2]],160:[[20,3],[20,3],[20,2]],158:[[20,3],[20,3],[19,2]],157:[[20,3],[19,3],[18,2]],156:[[20,3],[20,3],[18,2]],155:[[20,3],[19,3],[17,2]],154:[[20,3],[18,3],[18,2]],153:[[20,3],[19,3],[16,2]],152:[[20,3],[20,3],[16,2]],151:[[20,3],[17,3],[18,2]],150:[[20,3],[18,3],[18,2]],149:[[20,3],[19,3],[16,2]],148:[[20,3],[20,3],[14,2]],147:[[20,3],[17,3],[16,2]],146:[[20,3],[18,3],[16,2]],145:[[20,3],[19,3],[14,2]],144:[[20,3],[20,3],[12,2]],143:[[20,3],[17,3],[14,2]],142:[[20,3],[14,3],[20,2]],141:[[20,3],[19,3],[12,2]],140:[[20,3],[20,3],[10,2]],139:[[19,3],[20,3],[12,2]],138:[[20,3],[18,3],[12,2]],137:[[19,3],[18,3],[16,2]],136:[[20,3],[20,3],[8,2]],135:[[20,3],[15,3],[15,2]],134:[[20,3],[14,3],[16,2]],133:[[20,3],[19,3],[8,2]],132:[[20,3],[16,3],[12,2]],131:[[20,3],[13,3],[16,2]],130:[[20,3],[18,3],[8,2]],129:[[19,3],[16,3],[12,2]],128:[[18,3],[18,3],[10,2]],127:[[20,3],[17,3],[8,2]],126:[[19,3],[19,3],[6,2]],125:[[20,3],[15,3],[10,2]],124:[[20,3],[16,3],[8,2]],123:[[19,3],[16,3],[9,2]],122:[[18,3],[18,3],[7,2]],121:[[20,3],[11,3],[14,2]],120:[[20,3],[20,2]],119:[[19,3],[10,2]],118:[[20,3],[19,2]],117:[[20,3],[17,2]],116:[[20,3],[18,2]],115:[[20,3],[15,2]],114:[[20,3],[17,2]],113:[[20,3],[13,2]],112:[[20,3],[16,2]],111:[[20,3],[15,2]],110:[[20,3],[14,2]],109:[[20,3],[11,2]],108:[[20,3],[12,2]],107:[[19,3],[10,2]],106:[[20,3],[13,2]],105:[[20,3],[11,2]],104:[[18,3],[13,2]],103:[[19,3],[8,2]],102:[[20,3],[11,2]],101:[[20,3],[9,2]],100:[[20,3],[10,2]],99:[[19,3],[10,2]],98:[[20,3],[9,2]],97:[[19,3],[10,2]],96:[[20,3],[8,2]],95:[[19,3],[9,2]],94:[[18,3],[10,2]],93:[[19,3],[8,2]],92:[[20,3],[6,2]],91:[[17,3],[10,2]],90:[[20,3],[5,2]],89:[[19,3],[8,2]],88:[[20,3],[4,2]],87:[[17,3],[9,2]],86:[[18,3],[7,2]],85:[[15,3],[10,2]],84:[[20,3],[2,2]],83:[[17,3],[8,2]],82:[[14,3],[10,2]],81:[[15,3],[8,2]],80:[[20,2]],79:[[19,2]],78:[[18,2]],77:[[19,2]],76:[[20,2]],75:[[17,2]],74:[[14,2]],73:[[19,2]],72:[[16,2]],71:[[13,2]],70:[[18,2]],69:[[19,2]],68:[[16,2]],67:[[17,2]],66:[[14,2]],65:[[15,2]],64:[[16,2]],63:[[13,2]],62:[[10,2]],61:[[15,2]],60:[[20,2]],59:[[19,2]],58:[[18,2]],57:[[17,2]],56:[[16,2]],55:[[15,2]],54:[[14,2]],53:[[13,2]],52:[[12,2]],51:[[11,2]],50:[[25,2]],49:[[9,2]],48:[[16,2]],47:[[15,2]],46:[[14,2]],45:[[13,2]],44:[[12,2]],43:[[11,2]],42:[[10,2]],41:[[9,2]]};
+    const route=finishes[remaining];if(route&&route.length)aim={n:route[0][0],m:route[0][1]};
+    else if(remaining<=40&&remaining%2===0)aim={n:remaining/2,m:2};
+    else if(remaining<=40)aim={n:remaining-1,m:1};
+   }
+   const accuracy={easy:{miss:.30,adjacent:.42,mult:.68},medium:{miss:.20,adjacent:.30,mult:.52},hard:{miss:.12,adjacent:.19,mult:.36},pro:{miss:.065,adjacent:.105,mult:.25}}[level]||{miss:.20,adjacent:.30,mult:.50};
+   if(Math.random()<accuracy.miss)return {n:0,m:0};
+   let n=aim.n,m=aim.m;
+   if(Math.random()<accuracy.adjacent){const order=[20,1,18,4,13,6,10,15,2,17,3,19,7,16,8,11,14,9,12,5],i=order.indexOf(n);n=order[(i+(Math.random()<.5?1:order.length-1))%order.length];}
+   if(m>1&&Math.random()<accuracy.mult)m=1;else if(m===1&&Math.random()<accuracy.mult*.10)m=2;
+   return {n,m};
+  }
+  const me=state.players[1],opp=state.players[0];
+  // MVG-inspired strategy: close open targets first, then score when useful.
+  // Difficulty affects both throw accuracy and how consistently the bot follows
+  // the best tactical choice; this is a game simulation, not measured player data.
+  const numberValue={20:1.18,19:1.12,18:1.06,17:1.00,16:0.94,15:0.88,25:0.82};
+  const unclosedTargets=nums.filter(n=>!isClosed(me,n)).length;
+  const currentTurnThrows=state.history.filter(x=>x.player===me.name&&x.round===state.round);
+  const countTargetThisTurn=n=>currentTurnThrows.filter(x=>{
+   const match=String(x.hit).match(/(?:Single|Double|Triple)\s+(Bull|\d+)/i);
+   return match&&(match[1].toLowerCase()==='bull'?25:Number(match[1]))===n;
+  }).length;
+  const repeatPenalty={easy:10,medium:7,hard:4,pro:2.5}[level]||7;
+  const candidates=[];
+  for(const n of nums){
+   const remaining=Math.max(0,3-me.marks[n]);
+   const opponentOpen=!isClosed(opp,n);
+   // Do not waste darts on targets neither player can benefit from.
+   if(remaining===0&&!opponentOpen)continue;
+   // Bull has only two valid beds: green outer bull = 1 mark, red inner bull = 2 marks.
+   // Triple is available only on numbers 15–20, never on bull.
+   for(const m of (n===25?[1,2]:[1,2,3])){
+    const marksToClose=Math.min(m,remaining);
+    const extraMarks=Math.max(0,m-remaining);
+    let value=0;
+    if(marksToClose>0){
+     // Closing the bot's remaining targets is more important than farming points.
+     value+=marksToClose*(12+numberValue[n]*2.4);
+     if(extraMarks>0&&opponentOpen){
+      const points=(n===25?25:n)*extraMarks;
+      value+=state.mode==='cutthroat'?points*0.12:points*0.18;
+     }
+    }else if(opponentOpen){
+     const points=(n===25?25:n)*m;
+     // In Cut-Throat, scoring is valuable, but not at the expense of open targets.
+     value+=state.mode==='cutthroat'
+      ?points*(unclosedTargets===0?0.70:0.12)
+      :points*(unclosedTargets===0?0.62:0.16);
+    }
+    const repeats=countTargetThisTurn(n);
+    if(repeats>0){
+     // Discourage repeatedly scoring on one already-closed target while other
+     // targets remain. Once everything is closed, use a lighter variety penalty.
+     value-=repeats*(unclosedTargets>0&&remaining===0?repeatPenalty:repeatPenalty*0.35);
+    }
+    // Lower levels vary their tactical choices more; execution errors are separate below.
+    value+=(Math.random()-0.5)*(level==='easy'?6.5:level==='medium'?3.5:level==='hard'?1.2:0.35);
+    candidates.push({n,m,value});
+   }
+  }
+  candidates.sort((a,b)=>b.value-a.value);
+  let aim=candidates[0]||{n:20,m:1};
+
+  // In Cut-Throat, randomly decide whether this dart should pressure the
+  // opponent for points or focus on closing the bot's remaining targets.
+  // All levels can choose a scoring dart; lower levels do so more often.
+  const scoreIntentChance={easy:0.68,medium:0.48,hard:0.38,pro:0.30}[level]||0.48;
+  let choseScoringTarget=false;
+  if(state.mode==='cutthroat'&&Math.random()<scoreIntentChance){
+   const scoringTargets=[];
+   for(const n of nums){
+    const ownClosed=isClosed(me,n);
+    const opponentOpen=!isClosed(opp,n);
+    if(ownClosed&&opponentOpen){
+     // Choose randomly between valid scoring targets, favoring higher values
+     // without forcing the bot to hit the same number every turn.
+     const weight=(n===25?25:n);
+     scoringTargets.push({n,m:1,weight});
+     scoringTargets.push({n,m:2,weight:weight*0.8});
+     if(n!==25)scoringTargets.push({n,m:3,weight:weight*0.65});
+    }
+   }
+   if(scoringTargets.length){
+    choseScoringTarget=true;
+    const total=scoringTargets.reduce((sum,c)=>sum+c.weight,0);
+    let roll=Math.random()*total;
+    for(const target of scoringTargets){roll-=target.weight;if(roll<=0){aim=target;break;}}
+   }
+  }
+
+  // All levels sometimes vary their tactical choice. This keeps play less
+  // deterministic while preserving stronger decision-making at higher levels.
+  const tacticalMistake={easy:0.27,medium:0.30,hard:0.18,pro:0.09}[level]||0.30;
+  if(!choseScoringTarget&&candidates.length>1&&Math.random()<tacticalMistake){
+   const alternatives=candidates.filter(c=>c.n!==aim.n).slice(0,6);
+   if(alternatives.length)aim=alternatives[Math.floor(Math.random()*alternatives.length)];
+  }
+
+  // Accuracy profile: miss, adjacent segment, and wrong multiplier probabilities.
+  const profile={
+   easy:   {miss:0.28,segment:0.47,multiplier:0.62},
+   medium: {miss:0.29,segment:0.46,multiplier:0.60},
+   hard:   {miss:0.19,segment:0.34,multiplier:0.45},
+   pro:    {miss:0.12,segment:0.23,multiplier:0.32}
+  }[level]||{miss:0.22,segment:0.38,multiplier:0.50};
+  if(Math.random()<profile.miss)return {n:0,m:0};
+
+  let landedN=aim.n;
+  if(Math.random()<profile.segment){
+   if(aim.n===25){
+    landedN=Math.random()<0.5?20:1;
+   }else{
+    const order=[20,1,18,4,13,6,10,15,2,17,3,19,7,16,8,11,14,9,12,5];
+    const idx=order.indexOf(aim.n);
+    const direction=Math.random()<0.5?-1:1;
+    landedN=order[(idx+direction+order.length)%order.length];
+   }
+  }
+  let landedM=aim.m;
+  if(aim.m>1&&Math.random()<profile.multiplier){
+   landedM=1;
+  }else if(aim.m===1&&Math.random()<profile.multiplier*0.12){
+   landedM=2;
+  }
+  return {n:landedN,m:landedM};
+ }
+ $('numberGrid').addEventListener('click',e=>{
+  const multButton=e.target.closest('[data-mult-hit]');
+  if(multButton){const n=Number(multButton.dataset.hit),m=Number(multButton.dataset.multHit);flashTarget(n,multButton);boardSector(n,m);record(n,m);return}
+  const single=e.target.closest('[data-hit]');
+  if(single){const n=Number(single.dataset.hit);flashTarget(n,single);boardSector(n,1);record(n,1)}
+ });
+ $('numberGrid').addEventListener('keydown',e=>{
+  const single=e.target.closest('.hit-number');
+  if(single&&(e.key==='Enter'||e.key===' ')){e.preventDefault();const n=Number(single.dataset.hit);flashTarget(n,single);boardSector(n,1);record(n,1)}
+ });
+ $('undoBtn').addEventListener('click',()=>{clearTimeout(botTimer);botGeneration++;if(!snapshots.length)return;state=snapshots.pop();$('overlay').style.display='none';render()});
+ $('skipBtn').addEventListener('click',()=>{if(!state||state.winner)return;clearTimeout(botTimer);botGeneration++;showToast('Turn skipped');endTurn(true);});
+ $('newBtn').addEventListener('click',()=>{if(confirm('Start a new game? Current game progress will be lost.'))startNew()});
+ $('opponentMode').addEventListener('change',()=>{
+  $('difficultyWrap').style.display=$('opponentMode').value==='bot'?'flex':'none';
+  $('name2').disabled=false;
+ });
+ $('botDifficulty').addEventListener('change',()=>{});
+ function updateGameControls(){const cricket=$('gameType').value==='cricket';$('cricketModeWrap').style.display=cricket?'flex':'none';$('doubleInWrap').style.display=cricket?'none':'flex';$('doubleOutWrap').style.display=cricket?'none':'flex';}
+ $('gameType').addEventListener('change',()=>{
+  updateGameControls();
+  const type=$('gameType').value;
+  // Immediately preview the starting score for 301/501 in the scoreboard.
+  if(type!=='cricket'){
+   $('score0').textContent=type;
+   $('score1').textContent=type;
+   $('player0').querySelector('.statline span').textContent='Remaining';
+   $('player1').querySelector('.statline span').textContent='Remaining';
+  }else{
+   $('score0').textContent='0';
+   $('score1').textContent='0';
+   $('player0').querySelector('.statline span').textContent='Points';
+   $('player1').querySelector('.statline span').textContent='Points';
+  }
+ });
+ updateGameControls();
+ $('applyBtn').addEventListener('click',()=>{
+  const requestedGameType=$('gameType').value;const requestedDoubleIn=$('doubleIn').value==='on';const requestedDoubleOut=$('doubleOut').value==='on';const requestedMode=$('gameMode').value;
+  const requestedOpponent=$('opponentMode').value;
+  const requestedDifficulty=$('botDifficulty').value;
+  const changed=state.gameType!==requestedGameType||state.doubleIn!==requestedDoubleIn||state.doubleOut!==requestedDoubleOut||state.mode!==requestedMode||state.opponent!==requestedOpponent||state.difficulty!==requestedDifficulty;
+  if(changed && state.history.length && !confirm('Changing game settings will start a new game and clear the current score. Continue?')){
+   $('gameType').value=state.gameType;$('doubleIn').value=state.doubleIn?'on':'off';$('doubleOut').value=state.doubleOut?'on':'off';updateGameControls();$('gameMode').value=state.mode;$('opponentMode').value=state.opponent;$('botDifficulty').value=state.difficulty;
+   $('difficultyWrap').style.display=state.opponent==='bot'?'flex':'none';$('name2').disabled=false;return;
+  }
+  clearTimeout(botTimer);botGeneration++;
+  if(changed){
+   state.gameType=requestedGameType;state.doubleIn=requestedDoubleIn;state.doubleOut=requestedDoubleOut;state.mode=requestedMode;state.opponent=requestedOpponent;state.difficulty=requestedDifficulty;
+   state.players.forEach(p=>{p.score=state.gameType==='cricket'?0:parseInt(state.gameType,10);p.opened=false;nums.forEach(n=>p.marks[n]=0)});
+   state.active=0;state.round=1;state.darts=0;state.turnHits=[];state.turnStartScore=null;state.history=[];state.winner=null;snapshots=[];$('overlay').style.display='none';
+  }
+  state.players[0].name=$('name1').value.trim()||'Player 1';
+  state.players[1].name=$('name2').value.trim()||(requestedOpponent==='bot'?'Bot':'Player 2');
+  $('name2').disabled=false;
+  render();showToast(changed?'Settings updated':'Player names updated');scheduleBotTurn();
+ });
+ $('playAgain').addEventListener('click',startNew);
+ document.addEventListener('keydown',e=>{if(e.target.matches('input,select,textarea'))return;if(e.key==='Escape')$('overlay').style.display='none';if(e.key.toLowerCase()==='u')$('undoBtn').click();if(e.code==='Space'&&!e.target.closest('button')){e.preventDefault();$('skipBtn').click()}});
+ $('difficultyWrap').style.display=$('opponentMode').value==='bot'?'flex':'none';$('name2').disabled=false;
+ // Hide the pointer after 3 seconds without mouse movement; restore it on activity.
+ let cursorHideTimer;
+ const showCursor=()=>{document.body.classList.remove('hide-cursor');clearTimeout(cursorHideTimer);cursorHideTimer=setTimeout(()=>document.body.classList.add('hide-cursor'),3000);};
+ ['mousemove','mousedown','wheel','keydown','touchstart'].forEach(evt=>document.addEventListener(evt,showCursor,{passive:true}));
+ showCursor();
+ state=initial();drawDartboard();render();
+})();
+</script>
+</body>
+</html>
